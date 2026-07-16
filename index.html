@@ -435,28 +435,57 @@ function showToast(msg){
   showToast._t = setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-async function apiGet(action, params){
-  if (!API_URL){
-    throw new Error('API_URL not configured');
-  }
-  const url = new URL(API_URL);
-  url.searchParams.set('action', action);
-  Object.keys(params || {}).forEach(k => {
-    if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
-      url.searchParams.set(k, params[k]);
+// Uses JSONP (script-tag injection) instead of fetch() so it works from
+// GitHub Pages / local files without CORS errors. The API returns
+// callback(...) when &callback= is supplied.
+let _jsonpSeq = 0;
+function apiGet(action, params){
+  return new Promise((resolve, reject) => {
+    if (!API_URL){
+      reject(new Error('API_URL not configured'));
+      return;
     }
+    const cbName = '__pbgcb_' + Date.now() + '_' + (_jsonpSeq++);
+    const url = new URL(API_URL);
+    url.searchParams.set('action', action);
+    Object.keys(params || {}).forEach(k => {
+      if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+        url.searchParams.set(k, params[k]);
+      }
+    });
+    url.searchParams.set('callback', cbName);
+
+    const script = document.createElement('script');
+    let done = false;
+
+    const cleanup = () => {
+      try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+      clearTimeout(timer);
+    };
+
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true; cleanup();
+      reject(new Error('Request timed out. Check your connection or the API URL.'));
+    }, 15000);
+
+    window[cbName] = (data) => {
+      if (done) return;
+      done = true; cleanup();
+      if (data && data.error) { reject(new Error(data.error)); return; }
+      resolve(data);
+    };
+
+    script.onerror = () => {
+      if (done) return;
+      done = true; cleanup();
+      reject(new Error('Could not reach the API. Check the API URL is correct and deployed for "Anyone".'));
+    };
+
+    script.src = url.toString();
+    document.head.appendChild(script);
   });
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
-  try {
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal });
-    if (!res.ok) throw new Error('Network error (' + res.status + ')');
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return data;
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 // =====================================================================
