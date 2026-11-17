@@ -37,6 +37,11 @@ Nothing is deleted anywhere — edits archive the old version.
 3. Click **Run ▸ setupGeeta** once. Approve the permissions prompt.
    This creates the **PBG_Geeta** sheet in your Drive, builds all the tabs,
    and seeds the 7 roles. Open **View ▸ Logs** to see the new sheet's link.
+   Then paste the file `Seed_v11.gs` as another script and click **Run ▸
+   seedV11** once — it loads the training calendar, the 24-SOP register
+   skeleton, and 15 empty Store Helper card slots. (SOP wording, role
+   responsibilities, checklist text and all Telugu are filled from the approved
+   v1.1 master, not by this seed.)
 4. **Deploy ▸ New deployment ▸ Web app.**
    - *Execute as:* **Me**
    - *Who has access:* **Anyone**
