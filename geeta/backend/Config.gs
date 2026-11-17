@@ -30,6 +30,11 @@ var VIEW_ALL_ROLES = ['FOUNDER', 'ADMIN', 'SATISH'];
 // Roles allowed to see Pricing (PRICE-001). Enforced server-side.
 var PRICING_ROLES  = ['FOUNDER', 'SATISH'];
 
+// PB1 Core web-app URL used to verify the EmpID + PIN at login (same PIN as
+// Core). Override by setting Script Property GEETA_CORE_API_URL. The default
+// is PBG's existing Core/Quote endpoint.
+var DEFAULT_CORE_API_URL = 'https://script.google.com/macros/s/AKfycbz3HqtrB6fF38MxzSzdLSc7_ORUamrGuvG0j5o1jVWeHpN5muhJ1eADNYgM0P0SkbiB/exec';
+
 /**
  * The PBG_Geeta sheet schema. One key per tab; the array is the header row.
  * Phase 1 + Phase 2 + Phase 3 tabs are all created up-front so the structure
@@ -38,7 +43,7 @@ var PRICING_ROLES  = ['FOUNDER', 'SATISH'];
 var SCHEMA = {
   // ---- Phase 1: handbook content ----
   SOPs:            ['SopID','code','title_en','title_te','department','version','effective_date','body_en','body_te','status','owner_role','created_at','updated_at','archived'],
-  Roles:           ['role_id','role_name','person','reports_to','responsibilities_en','responsibilities_te','measured_by_en','measured_by_te','helper_mode','customer_contact_allowed','created_at','updated_at'],
+  Roles:           ['role_id','role_name','person','emp_id','reports_to','responsibilities_en','responsibilities_te','measured_by_en','measured_by_te','helper_mode','customer_contact_allowed','created_at','updated_at'],
   Checklists:      ['ChecklistID','role_id','order','item_en','item_te','time_block','frequency','sop_code','image_url','audio_url','created_at','updated_at'],
   RoleSOPs:        ['role_id','sop_code'],
   Cover:           ['absent_role_id','covering_role_id','tasks','created_at'],
@@ -67,14 +72,17 @@ var SCHEMA = {
  * content (responsibilities_*, measured_by_*) is left BLANK on purpose — it
  * will be filled word-for-word from the v1.1 SOP master when you paste it.
  * reports_to is a sensible default — please confirm the reporting lines.
- * Columns: role_id, role_name, person, reports_to, helper_mode, customer_contact_allowed
+ * emp_id links the role to the PB1 Core Employee ID so login can reuse the
+ * same PIN as PB1 Core. Nagender and Srinivas Sarma are blank until you
+ * register them in Core.
+ * Columns: role_id, role_name, person, emp_id, reports_to, helper_mode, customer_contact_allowed
  */
 var ROLE_SEED = [
-  ['FOUNDER',  'Founder / Admin',                 'Founder',           '',        'N', 'Y'],
-  ['SATISH',   'Sales & Operations Manager',      'Satish',            'FOUNDER', 'N', 'Y'],
-  ['LATHA',    'Sales & Customer Coordinator',    'Latha',             'SATISH',  'N', 'Y'],
-  ['RADHIKA',  'Accounts Executive',              'Radhika',           'FOUNDER', 'N', 'N'],
-  ['ARJUN',    'Senior Store Helper',             'Arjun',             'SATISH',  'Y', 'N'],
-  ['NAGENDER', 'Store Helper & Vehicle In-charge','Nagender',          'SATISH',  'Y', 'N'],
-  ['FATHER',   'Collections & Audit Supervisor',  "Founder's Father",  'FOUNDER', 'N', 'N']
+  ['FOUNDER',  'Founder / Admin',                 'Founder',          'PBG-EMP0001', '',        'N', 'Y'],
+  ['SATISH',   'Sales & Operations Manager',      'Satish',           'PBG-EMP0008', 'FOUNDER', 'N', 'Y'],
+  ['LATHA',    'Sales & Customer Coordinator',    'Latha',            'PBG-EMP0005', 'SATISH',  'N', 'Y'],
+  ['RADHIKA',  'Accounts Executive',              'Radhika',          'PBG-EMP0006', 'FOUNDER', 'N', 'N'],
+  ['ARJUN',    'Senior Store Helper',             'Arjun',            'PBG-EMP0007', 'SATISH',  'Y', 'N'],
+  ['NAGENDER', 'Store Helper & Vehicle In-charge','Nagender',         '',            'SATISH',  'Y', 'N'],
+  ['FATHER',   'Collections & Audit Supervisor',  'Srinivas Sarma',   '',            'FOUNDER', 'N', 'N']
 ];

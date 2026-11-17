@@ -37,6 +37,8 @@ function reply_(obj, cb) {
 function route_(action, p) {
   switch (action) {
     case 'ping':       return { ok: true, data: { app: 'PBG Geeta', time: new Date() } };
+    case 'login':      return login_(p);
+    case 'acknowledge':return acknowledge_(requireUser_(p), p.version, p.sop_codes, p.method);
     case 'devLogin':   return devLogin_(p);
     case 'listRoles':  return listRoles_(requireUser_(p));
     case 'getRole':    return getRole_(requireUser_(p), p.role_id);
@@ -62,7 +64,70 @@ function requireUser_(p) {
   };
 }
 
-/** TEMPORARY. Real login (EmpID + Core PIN) replaces this in Stage C. */
+/**
+ * Real login: EmpID + PIN. The PIN is the SAME as PB1 Core — we verify it by
+ * asking Core's own login endpoint, so there is one source of truth and no PIN
+ * is stored in Geeta. The EmpID must be linked to a Geeta role (Roles.emp_id).
+ */
+function login_(p) {
+  var empId = String(p.emp_id || p.employeeId || '').trim();
+  var pin = String(p.pin || '').trim();
+  if (!empId || !pin) return { ok: false, error: 'Employee ID and PIN are required.' };
+
+  var role = readTable_('Roles').filter(function (r) {
+    return String(r.emp_id).trim().toUpperCase() === empId.toUpperCase();
+  })[0];
+  if (!role) { denial_({ EmpID: empId }, 'login', 'login', 'no Geeta role for Employee ID'); return { ok: false, error: 'This Employee ID is not set up in the handbook yet. Please ask the Founder.' }; }
+
+  var coreUrl = PropertiesService.getScriptProperties().getProperty('GEETA_CORE_API_URL') || DEFAULT_CORE_API_URL;
+  var v = verifyWithCore_(coreUrl, empId, pin);
+  if (!v.ok) return { ok: false, error: v.error || 'Wrong Employee ID or PIN.' };
+
+  var roleId = String(role.role_id).toUpperCase();
+  var now = new Date(), exp = new Date(now.getTime() + GEETA.SESSION_TTL_MIN * 60000);
+  var token = Utilities.getUuid();
+  var accessAll = VIEW_ALL_ROLES.indexOf(roleId) >= 0;
+  var pricingOk = PRICING_ROLES.indexOf(roleId) >= 0;
+  appendRow_('Sessions', {
+    Token: token, EmpID: empId, RoleID: roleId, Name: v.name || role.person,
+    AccessAll: accessAll, PricingOK: pricingOk, CreatedAt: now, ExpiresAt: exp
+  }, { EmpID: empId, RoleID: roleId });
+  return { ok: true, data: { token: token, role_id: roleId, name: v.name || role.person, accessAll: accessAll, pricingOK: pricingOk, helper_mode: role.helper_mode } };
+}
+
+/** Ask PB1 Core to verify the EmpID + PIN (reuses Core's existing login). */
+function verifyWithCore_(url, empId, pin) {
+  try {
+    var u = url + (url.indexOf('?') >= 0 ? '&' : '?') +
+      'action=login&employeeId=' + encodeURIComponent(empId) +
+      '&pin=' + encodeURIComponent(pin) + '&callback=__cb';
+    var resp = UrlFetchApp.fetch(u, { muteHttpExceptions: true, followRedirects: true });
+    var d = JSON.parse(stripJsonp_(resp.getContentText()));
+    if (d && d.success) return { ok: true, name: (d.employee && d.employee.name) || '' };
+    return { ok: false, error: (d && d.error) || 'Wrong Employee ID or PIN.' };
+  } catch (e) {
+    return { ok: false, error: 'Could not reach PB1 Core to check your PIN. Please try again.' };
+  }
+}
+
+/** Pull the JSON out of a "callback({...})" JSONP response. */
+function stripJsonp_(t) {
+  var m = String(t).match(/^[^(]*\(([\s\S]*)\)\s*;?\s*$/);
+  return m ? m[1] : t;
+}
+
+/** Record a "Read and understood" (or "Explained to me") sign-off. */
+function acknowledge_(user, version, sopCodes, method) {
+  if (!version) return { ok: false, error: 'version is required.' };
+  var id = 'ACK' + Date.now();
+  appendRow_('Acknowledgements', {
+    AckID: id, person: user.Name || user.EmpID, role_id: user.RoleID,
+    version: version, sop_codes: sopCodes || '', method: method || 'read', date: new Date()
+  }, user);
+  return { ok: true, data: { AckID: id } };
+}
+
+/** TEMPORARY. Dev-only bypass for testing before PINs are set. */
 function devLogin_(p) {
   if (PropertiesService.getScriptProperties().getProperty(GEETA.PROP_ALLOW_DEV_LOGIN) !== 'TRUE')
     return { ok: false, error: 'Dev login is off. Set GEETA_ALLOW_DEV_LOGIN = TRUE in Script Properties to test.' };
