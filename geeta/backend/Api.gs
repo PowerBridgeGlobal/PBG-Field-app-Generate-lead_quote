@@ -38,6 +38,7 @@ function route_(action, p) {
   switch (action) {
     case 'ping':       return { ok: true, data: { app: 'PBG SOP Gita', time: new Date() } };
     case 'login':      return login_(p);
+    case 'coreLogin':  return coreLogin_(p);
     case 'acknowledge':return acknowledge_(requireUser_(p), p.version, p.sop_codes, p.method);
     case 'devLogin':   return devLogin_(p);
     case 'listRoles':  return listRoles_(requireUser_(p));
@@ -93,6 +94,28 @@ function login_(p) {
     AccessAll: accessAll, PricingOK: pricingOk, CreatedAt: now, ExpiresAt: exp
   }, { EmpID: empId, RoleID: roleId });
   return { ok: true, data: { token: token, role_id: roleId, name: v.name || role.person, accessAll: accessAll, pricingOK: pricingOk, helper_mode: role.helper_mode } };
+}
+
+/**
+ * Trusted login for the handbook embedded INSIDE PB1 Core. Core has already
+ * authenticated the user; it calls this with the shared GEETA_CORE_TOKEN and
+ * the user's EmpID, and gets back a normal (own-role-scoped) session — no
+ * second PIN. The token only ever unlocks handbook content; pricing, grace and
+ * financial data are never returned by handbook endpoints.
+ */
+function coreLogin_(p) {
+  var expected = PropertiesService.getScriptProperties().getProperty(GEETA.PROP_CORE_TOKEN);
+  if (!expected) return { ok: false, error: 'Core handbook token not configured (set GEETA_CORE_TOKEN).' };
+  if (String(p.core_token || '') !== String(expected)) { denial_({ EmpID: p.emp_id || 'core' }, 'coreLogin', 'coreLogin', 'bad core token'); return { ok: false, error: 'Not authorised.' }; }
+  var empId = String(p.emp_id || p.employeeId || '').trim();
+  var role = readTable_('Roles').filter(function (r) { return String(r.emp_id).trim().toUpperCase() === empId.toUpperCase(); })[0];
+  if (!role) return { ok: false, error: 'This Employee ID is not set up in the handbook yet.' };
+  var roleId = String(role.role_id).toUpperCase();
+  var now = new Date(), exp = new Date(now.getTime() + GEETA.SESSION_TTL_MIN * 60000);
+  var token = Utilities.getUuid();
+  var accessAll = VIEW_ALL_ROLES.indexOf(roleId) >= 0, pricingOk = PRICING_ROLES.indexOf(roleId) >= 0;
+  appendRow_('Sessions', { Token: token, EmpID: empId, RoleID: roleId, Name: role.person, AccessAll: accessAll, PricingOK: pricingOk, CreatedAt: now, ExpiresAt: exp }, { EmpID: empId, RoleID: roleId });
+  return { ok: true, data: { token: token, role_id: roleId, name: role.person, accessAll: accessAll, pricingOK: pricingOk, helper_mode: role.helper_mode } };
 }
 
 /** Ask PB1 Core to verify the EmpID + PIN (reuses Core's existing login). */
@@ -173,7 +196,20 @@ function getRole_(user, roleId) {
   var sops = readTable_('SOPs')
     .filter(function (s) { return s.status === 'Approved' && codes.indexOf(s.code) >= 0; })
     .map(function (s) { return { code: s.code, title_en: s.title_en, title_te: s.title_te, version: s.version, effective_date: s.effective_date }; });
-  return { ok: true, data: { role: role, checklist: checklist, sops: sops, helper_mode: role.helper_mode } };
+  return { ok: true, data: { role: role, checklist: checklist, sops: sops, helper_mode: role.helper_mode, covering: coveringTasksFor_(roleId) } };
+}
+
+/** Covering today (HR-001): tasks this role is covering for an absent colleague. */
+function coveringTasksFor_(roleId) {
+  var nameOf = {};
+  readTable_('Roles').forEach(function (r) { nameOf[String(r.role_id).toUpperCase()] = r.person; });
+  return readTable_('Cover')
+    .filter(function (c) { return String(c.covering_role_id).toUpperCase() === roleId; })
+    .map(function (c) {
+      var absent = String(c.absent_role_id).toUpperCase();
+      var tasks = String(c.tasks || '').split(/\n|;|•/).map(function (s) { return s.trim(); }).filter(function (s) { return s; });
+      return { absent_role_id: absent, absent_person: nameOf[absent] || absent, tasks: tasks };
+    });
 }
 
 function getSOP_(user, code) {

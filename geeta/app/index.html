@@ -163,7 +163,7 @@ var STR = {
     ack:"Read and understood", acked:"Thank you — recorded.", logout:"Sign out",
     tel_soon:"Telugu coming soon", nosops:"No SOPs loaded yet.", nocheck:"No checklist loaded yet.",
     notrain:"No training loaded for this month yet.", helper_note:"Store Helper is live in English. The photos are samples and the Telugu voice/text is coming soon.",
-    allroles:"View any role", wrong:"Wrong Employee ID or PIN.", loading:"Loading…" },
+    allroles:"View any role", wrong:"Wrong Employee ID or PIN.", loading:"Loading…", covering:"Covering today" },
   te:{ sub:"సజీవ హ్యాండ్‌బుక్", signin:"లాగిన్", empid:"ఉద్యోగి ID", pin:"పిన్",
     preview:"ఎవరిగా చూడాలి…", myrole:"నా పాత్ర", resp:"బాధ్యతలు", measured:"కొలత",
     checklist:"నేటి చెక్‌లిస్ట్", mysops:"నా SOPలు", training:"ఈ నెల శిక్షణ",
@@ -171,7 +171,7 @@ var STR = {
     ack:"చదివి అర్థమైంది", acked:"ధన్యవాదాలు — నమోదైంది.", logout:"లాగ్ అవుట్",
     tel_soon:"తెలుగు త్వరలో", nosops:"ఇంకా SOPలు లోడ్ కాలేదు.", nocheck:"ఇంకా చెక్‌లిస్ట్ లోడ్ కాలేదు.",
     notrain:"ఈ నెలకు శిక్షణ ఇంకా లేదు.", helper_note:"స్టోర్ హెల్పర్ ఇంగ్లీష్‌లో లైవ్‌లో ఉంది. ఫోటోలు నమూనాలు, తెలుగు త్వరలో వస్తుంది.",
-    allroles:"ఏ పాత్ర అయినా చూడండి", wrong:"ఉద్యోగి ID లేదా పిన్ తప్పు.", loading:"లోడ్ అవుతోంది…" }
+    allroles:"ఏ పాత్ర అయినా చూడండి", wrong:"ఉద్యోగి ID లేదా పిన్ తప్పు.", loading:"లోడ్ అవుతోంది…", covering:"ఈ రోజు కవర్" }
 };
 function t(k){ return (STR[state.lang] && STR[state.lang][k]) || STR.en[k] || k; }
 
@@ -212,7 +212,18 @@ function demoRoleData(id){
     {code:"STO-001",title_en:"Store Opening Procedure",title_te:"",version:"1.1",effective_date:"2026-11-23"},
     {code:"SAFE-001",title_en:"Safety",title_te:"",version:"1.1",effective_date:"2026-11-23"}
   ];
-  return { role:r, checklist:checklist, sops:sops, helper_mode:r.helper_mode };
+  return { role:r, checklist:checklist, sops:sops, helper_mode:r.helper_mode, covering:demoCovering(id) };
+}
+function demoCovering(id){
+  if(String(id).toUpperCase()==='ARJUN') return [{absent_role_id:'NAGENDER',absent_person:'Nagender',
+    tasks:['[SAMPLE] Daily vehicle check — both two-wheelers','[SAMPLE] Lock the shutter at closing']}];
+  return [];
+}
+function empToRoleDemo(emp){
+  var map={'PBG-EMP0001':'FOUNDER','PBG-EMP0008':'SATISH','PBG-EMP0005':'LATHA','PBG-EMP0006':'RADHIKA','PBG-EMP0007':'ARJUN'};
+  if(!emp) return '';
+  var u=String(emp).toUpperCase();
+  return map[u] || (DEMO_ROLES[u]?u:'');
 }
 var DEMO_SOP_BODY = {
   "STO-001":"[SAMPLE TEXT — your approved v1.1 wording will replace this.]\n\nThis is placeholder content to show how an SOP page looks: title, version and effective date at the top, then the step-by-step body. The real Store Opening Procedure (English + Telugu) loads when you paste the v1.1 master.",
@@ -328,9 +339,10 @@ function renderHome(){
     '<div class="card"><h2>'+esc(r.role_name)+'</h2><div class="muted">'+esc(r.person||'')+'</div></div>'+
     '<div class="card"><h3>'+t('resp')+'</h3><div id="resp"><div class="muted">'+t('loading')+'</div></div></div>'+
     '<div class="card"><h3>'+t('checklist')+'</h3><div id="cl"></div></div>'+
+    '<div id="covwrap"></div>'+
     '<div class="card"><h3>'+t('mysops')+'</h3>'+
       '<div class="searchbar"><input id="sopSearch" placeholder="'+t('search')+'"></div><div id="sops"></div></div>'+
-    '<button class="btn ghost" onclick="logout()">'+t('logout')+'</button>';
+    (state.embed?'':'<button class="btn ghost" onclick="logout()">'+t('logout')+'</button>');
   loadRole(r.role_id);
 }
 function pickRole(){
@@ -348,6 +360,7 @@ function loadRole(roleId){
     if(!d.ok){ return; }
     renderResp(d.data.role||{});
     renderChecklist(d.data.checklist||[]);
+    renderCovering(d.data.covering||[]);
     state._sops=d.data.sops||[];
     renderSOPList(state._sops);
     var sb=document.getElementById('sopSearch');
@@ -356,6 +369,14 @@ function loadRole(roleId){
   });
 }
 function listify(s){ return String(s).split('\n').filter(function(x){return x.trim();}).map(function(x){return '<li style="margin-bottom:6px">'+esc(x)+'</li>';}).join(''); }
+function renderCovering(list){
+  var el=document.getElementById('covwrap'); if(!el)return;
+  if(!list||!list.length){ el.innerHTML=''; return; }
+  el.innerHTML=list.map(function(c){
+    var items=c.tasks&&c.tasks.length ? '<ul style="margin:0;padding-left:20px">'+c.tasks.map(function(x){return '<li style="margin-bottom:6px">'+esc(x)+'</li>';}).join('')+'</ul>' : '<div class="muted">—</div>';
+    return '<div class="card" style="border-color:var(--gold)"><h3>👥 '+t('covering')+' — '+esc(c.absent_person)+'</h3>'+items+'</div>';
+  }).join('');
+}
 function renderResp(role){
   var el=document.getElementById('resp'); if(!el)return;
   var te=state.lang==='te';
@@ -420,12 +441,18 @@ function renderHelperHome(){
       '<div class="muted">'+esc(state.session.role_name)+'</div>'+
       '<div class="clock" style="margin-top:8px;font-size:15px">📋 '+hello+'</div></div>'+
     '<div id="hcards"></div>'+
-    '<button class="btn ghost" onclick="logout()">'+t('logout')+'</button>';
+    (state.embed?'':'<button class="btn ghost" onclick="logout()">'+t('logout')+'</button>');
   api('getRole',{role_id:state.session.role_id,token:tok()}).then(function(d){
     var items=(d.ok&&d.data.checklist)||[];
     var el=document.getElementById('hcards');
     if(!items.length){ el.innerHTML='<div class="pending">'+t('nocheck')+'</div>'; return; }
-    el.innerHTML=items.map(helperCardHtml).join('');
+    var cov=(d.ok&&d.data.covering)||[];
+    var covHtml='';
+    cov.forEach(function(c){
+      covHtml+='<div class="clock" style="margin-top:16px">👥 '+t('covering')+' — '+esc(c.absent_person)+'</div>'+
+        c.tasks.map(function(task){ return '<div class="hcard"><div class="hrow"><div class="num">+</div><div class="cap">'+esc(task)+'</div></div></div>'; }).join('');
+    });
+    el.innerHTML=items.map(helperCardHtml).join('')+covHtml;
   });
 }
 function helperCardHtml(it){
@@ -482,8 +509,30 @@ function playVoice(url, btn){
 function tok(){ return (state.session&&state.session.token)||''; }
 
 /* ---------------- boot ---------------------------------------------------- */
-try{ var saved=sessionStorage.getItem('geeta_session'); if(saved) state.session=JSON.parse(saved);}catch(e){}
-applyLang(); render();
+(function boot(){
+  var q; try{ q=new URLSearchParams(location.search); }catch(e){ q=null; }
+  var emb = q && (q.get('embed')==='1' || q.get('emp'));
+  if(emb){
+    // Embedded inside PB1 Core: no second login — Core passes the EmpID + token.
+    state.embed=true;
+    var apiParam=q.get('api'); if(apiParam){ API_URL=apiParam; DEMO=false; }
+    var emp=q.get('emp')||'', ctoken=q.get('token')||'';
+    applyLang();
+    if(DEMO){
+      var rid=empToRoleDemo(emp)||'ARJUN';
+      state.session=Object.assign({},DEMO_ROLES[rid]); render();
+    } else {
+      M.innerHTML='<div class="card"><div class="muted">'+t('loading')+'</div></div>';
+      api('coreLogin',{emp_id:emp,core_token:ctoken}).then(function(d){
+        if(!d.ok){ M.innerHTML='<div class="card"><div class="pending">'+esc(d.error||'Not authorised')+'</div></div>'; return; }
+        state.session=d.data; render();
+      }).catch(function(e){ M.innerHTML='<div class="card"><div class="pending">'+esc(String(e.message||e))+'</div></div>'; });
+    }
+    return;
+  }
+  try{ var saved=sessionStorage.getItem('geeta_session'); if(saved) state.session=JSON.parse(saved);}catch(e){}
+  applyLang(); render();
+})();
 
 /* service worker (offline shell only; harmless if it fails, e.g. in preview) */
 if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }

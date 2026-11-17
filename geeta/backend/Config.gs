@@ -21,6 +21,7 @@ var GEETA = {
   PROP_SHEET_ID:        'GEETA_SHEET_ID',
   PROP_ALLOW_DEV_LOGIN: 'GEETA_ALLOW_DEV_LOGIN',
   PROP_GRACE_MINUTES:   'GEETA_GRACE_MINUTES',
+  PROP_CORE_TOKEN:      'GEETA_CORE_TOKEN',   // shared secret so PB1 Core can embed the handbook without a second login
   SHEET_NAME:           'PBG_Geeta',
   SESSION_TTL_MIN:      720          // 12 hours
 };
