@@ -36,7 +36,7 @@ function reply_(obj, cb) {
 
 function route_(action, p) {
   switch (action) {
-    case 'ping':       return { ok: true, data: { app: 'PBG Geeta', time: new Date() } };
+    case 'ping':       return { ok: true, data: { app: 'PBG SOP Gita', time: new Date() } };
     case 'login':      return login_(p);
     case 'acknowledge':return acknowledge_(requireUser_(p), p.version, p.sop_codes, p.method);
     case 'devLogin':   return devLogin_(p);

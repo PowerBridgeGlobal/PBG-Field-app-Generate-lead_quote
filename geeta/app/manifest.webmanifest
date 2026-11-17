@@ -1,7 +1,7 @@
 {
-  "name": "PBG Geeta",
-  "short_name": "PBG Geeta",
-  "description": "PowerBridge Global — living handbook. Your role, daily checklist and SOPs in English and Telugu.",
+  "name": "PBG SOP Gita",
+  "short_name": "PBG SOP Gita",
+  "description": "PowerBridge Global — living SOP handbook. Your role, daily checklist and SOPs in English and Telugu.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

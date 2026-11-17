@@ -1,6 +1,6 @@
-# PBG Geeta — the living handbook
+# PBG SOP Gita — the living handbook
 
-PBG Geeta is PowerBridge Global's daily handbook: each person's role, daily
+PBG SOP Gita is PowerBridge Global's daily handbook: each person's role, daily
 checklist and the SOPs that apply to them, in **English and Telugu**. It runs
 on the same stack as the rest of PBG — a Google Apps Script backend with a
 Google Sheet for data, and a lightweight web app on GitHub Pages.
