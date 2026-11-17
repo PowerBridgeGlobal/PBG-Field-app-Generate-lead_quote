@@ -63,3 +63,26 @@ function denial_(user, entity, op, reason) {
     ]);
   } catch (e) { /* ignore */ }
 }
+
+/** Update the first row where keyCol === keyVal with the fields in patch.
+ *  Writes only the named columns; records the change in AuditLog. Returns
+ *  true if a row was found. (No hard deletes anywhere — we only edit cells.) */
+function updateFirst_(tab, keyCol, keyVal, patch, user) {
+  var sh = sheet_(tab);
+  var data = sh.getDataRange().getValues();
+  var headers = data[0];
+  var kc = headers.indexOf(keyCol);
+  if (kc < 0) throw new Error('No column "' + keyCol + '" in ' + tab);
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][kc]) === String(keyVal)) {
+      var prev = {}; headers.forEach(function (h, i) { prev[h] = data[r][i]; });
+      Object.keys(patch).forEach(function (k) {
+        var ci = headers.indexOf(k);
+        if (ci >= 0) sh.getRange(r + 1, ci + 1).setValue(patch[k]);
+      });
+      audit_(user, tab, 'update', keyVal, prev, patch);
+      return true;
+    }
+  }
+  return false;
+}

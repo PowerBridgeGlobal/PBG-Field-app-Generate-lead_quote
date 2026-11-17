@@ -162,7 +162,7 @@ var STR = {
     search:"Search my SOPs…", version:"Version", effective:"Effective", back:"Back",
     ack:"Read and understood", acked:"Thank you — recorded.", logout:"Sign out",
     tel_soon:"Telugu coming soon", nosops:"No SOPs loaded yet.", nocheck:"No checklist loaded yet.",
-    notrain:"No training loaded for this month yet.", helper_note:"Picture + voice Helper Mode. The photos and Telugu words shown are SAMPLES until the real ones are added.",
+    notrain:"No training loaded for this month yet.", helper_note:"Store Helper is live in English. The photos are samples and the Telugu voice/text is coming soon.",
     allroles:"View any role", wrong:"Wrong Employee ID or PIN.", loading:"Loading…" },
   te:{ sub:"సజీవ హ్యాండ్‌బుక్", signin:"లాగిన్", empid:"ఉద్యోగి ID", pin:"పిన్",
     preview:"ఎవరిగా చూడాలి…", myrole:"నా పాత్ర", resp:"బాధ్యతలు", measured:"కొలత",
@@ -170,7 +170,7 @@ var STR = {
     search:"నా SOPలలో వెతకండి…", version:"వర్షన్", effective:"అమల్లోకి", back:"వెనుకకు",
     ack:"చదివి అర్థమైంది", acked:"ధన్యవాదాలు — నమోదైంది.", logout:"లాగ్ అవుట్",
     tel_soon:"తెలుగు త్వరలో", nosops:"ఇంకా SOPలు లోడ్ కాలేదు.", nocheck:"ఇంకా చెక్‌లిస్ట్ లోడ్ కాలేదు.",
-    notrain:"ఈ నెలకు శిక్షణ ఇంకా లేదు.", helper_note:"ఫోటో + వాయిస్ హెల్పర్ మోడ్. అసలైనవి జోడించే వరకు ఫోటోలు, తెలుగు పదాలు నమూనాలు మాత్రమే.",
+    notrain:"ఈ నెలకు శిక్షణ ఇంకా లేదు.", helper_note:"స్టోర్ హెల్పర్ ఇంగ్లీష్‌లో లైవ్‌లో ఉంది. ఫోటోలు నమూనాలు, తెలుగు త్వరలో వస్తుంది.",
     allroles:"ఏ పాత్ర అయినా చూడండి", wrong:"ఉద్యోగి ID లేదా పిన్ తప్పు.", loading:"లోడ్ అవుతోంది…" }
 };
 function t(k){ return (STR[state.lang] && STR[state.lang][k]) || STR.en[k] || k; }
@@ -181,7 +181,8 @@ var DEMO_ROLES = {
   SATISH:{role_id:"SATISH",role_name:"Sales & Operations Manager",person:"Satish",helper_mode:"N",accessAll:true,pricingOK:true},
   LATHA:{role_id:"LATHA",role_name:"Sales & Customer Coordinator",person:"Latha",helper_mode:"N",accessAll:false,pricingOK:false},
   RADHIKA:{role_id:"RADHIKA",role_name:"Accounts Executive",person:"Radhika",helper_mode:"N",accessAll:false,pricingOK:false},
-  ARJUN:{role_id:"ARJUN",role_name:"Senior Store Helper",person:"Arjun",helper_mode:"Y",accessAll:false,pricingOK:false},
+  ARJUN:{role_id:"ARJUN",role_name:"Senior Store Helper",person:"Arjun",helper_mode:"Y",accessAll:false,pricingOK:false,
+    responsibilities_en:"Open the store on time and get it ready for business\nMark attendance on the biometric device\nCheck drinking water; arrange water if it is low\nReceive, move, handle and pack stock carefully (no damage)\nHelp load and dispatch customer orders\nHelp customers carry/load goods\nKeep the store, counters and storage neat and safe\nLock the shutter at closing (when assigned)\nFollow all safety rules (SAFE-001)",responsibilities_te:""},
   NAGENDER:{role_id:"NAGENDER",role_name:"Store Helper & Vehicle In-charge",person:"Nagender",helper_mode:"Y",accessAll:false,pricingOK:false},
   FATHER:{role_id:"FATHER",role_name:"Collections & Audit Supervisor",person:"Srinivas Sarma",helper_mode:"N",accessAll:false,pricingOK:false}
 };
@@ -189,11 +190,19 @@ function demoRoleData(id){
   var r = DEMO_ROLES[id];
   var helper = r.helper_mode === "Y";
   var checklist = helper ? [
-    {order:1,time_block:"Store opening",item_en:"[SAMPLE] Open shutter and main door",item_te:"షట్టర్ తెరవండి",image_url:demoPhoto('shutter'),audio_url:""},
-    {order:2,time_block:"Store opening",item_en:"[SAMPLE] Mark attendance",item_te:"హాజరు వేయండి",image_url:demoPhoto('attendance'),audio_url:""},
-    {order:3,time_block:"Store opening",item_en:"[SAMPLE] Check drinking water",item_te:"నీళ్లు చూడండి",image_url:demoPhoto('water'),audio_url:""},
-    {order:4,time_block:"Midday",item_en:"[SAMPLE] Pack and dispatch goods",item_te:"సామాన్లు ప్యాక్ చేయండి",image_url:demoPhoto('packing'),audio_url:""},
-    {order:5,time_block:"Store closing",item_en:"[SAMPLE] Lock shutter",item_te:"షట్టర్ మూయండి",image_url:demoPhoto('closing'),audio_url:""}
+    {order:1, time_block:"Store opening",item_en:"Open shutter and main door",item_te:"",image_url:demoPhoto('shutter'),audio_url:""},
+    {order:2, time_block:"Store opening",item_en:"Switch on lights and fans",item_te:"",image_url:demoPhoto('lights'),audio_url:""},
+    {order:3, time_block:"Store opening",item_en:"Mark attendance (biometric)",item_te:"",image_url:demoPhoto('attendance'),audio_url:""},
+    {order:4, time_block:"Store opening",item_en:"Check drinking water; arrange if low",item_te:"",image_url:demoPhoto('water'),audio_url:""},
+    {order:5, time_block:"Store opening",item_en:"Quick clean / tidy the store",item_te:"",image_url:demoPhoto('clean'),audio_url:""},
+    {order:6, time_block:"Midday",item_en:"Receive incoming stock; help check against challan",item_te:"",image_url:demoPhoto('inward'),audio_url:""},
+    {order:7, time_block:"Midday",item_en:"Pack orders carefully",item_te:"",image_url:demoPhoto('packing'),audio_url:""},
+    {order:8, time_block:"Midday",item_en:"Help load the vehicle for dispatch",item_te:"",image_url:demoPhoto('dispatch'),audio_url:""},
+    {order:9, time_block:"Midday",item_en:"Help customers carry goods",item_te:"",image_url:demoPhoto('customer'),audio_url:""},
+    {order:10,time_block:"Evening",item_en:"Tidy counters and storage",item_te:"",image_url:demoPhoto('tidy'),audio_url:""},
+    {order:11,time_block:"Evening",item_en:"Check all items are back in place",item_te:"",image_url:demoPhoto('check'),audio_url:""},
+    {order:12,time_block:"Store closing",item_en:"Switch off lights/fans (as instructed)",item_te:"",image_url:demoPhoto('off'),audio_url:""},
+    {order:13,time_block:"Store closing",item_en:"Lock shutter (if assigned)",item_te:"",image_url:demoPhoto('closing'),audio_url:""}
   ] : [
     {order:1,time_block:"Morning",item_en:"[SAMPLE] Review today's leads / tasks",item_te:""},
     {order:2,time_block:"Midday",item_en:"[SAMPLE] Follow up open quotations",item_te:""},
@@ -317,7 +326,7 @@ function renderHome(){
   }
   h.innerHTML +=
     '<div class="card"><h2>'+esc(r.role_name)+'</h2><div class="muted">'+esc(r.person||'')+'</div></div>'+
-    '<div class="card"><h3>'+t('resp')+'</h3><div class="pending">'+t('tel_soon').replace('Telugu','').trim()+' — awaiting v1.1 content</div></div>'+
+    '<div class="card"><h3>'+t('resp')+'</h3><div id="resp"><div class="muted">'+t('loading')+'</div></div></div>'+
     '<div class="card"><h3>'+t('checklist')+'</h3><div id="cl"></div></div>'+
     '<div class="card"><h3>'+t('mysops')+'</h3>'+
       '<div class="searchbar"><input id="sopSearch" placeholder="'+t('search')+'"></div><div id="sops"></div></div>'+
@@ -337,6 +346,7 @@ function viewRole(id){ state.allView=Object.assign({},DEMO_ROLES[id]); render();
 function loadRole(roleId){
   api('getRole',{role_id:roleId,token:tok()}).then(function(d){
     if(!d.ok){ return; }
+    renderResp(d.data.role||{});
     renderChecklist(d.data.checklist||[]);
     state._sops=d.data.sops||[];
     renderSOPList(state._sops);
@@ -344,6 +354,19 @@ function loadRole(roleId){
     if(sb) sb.oninput=function(){ var q=this.value.toLowerCase();
       renderSOPList((state._sops||[]).filter(function(s){return (s.code+s.title_en).toLowerCase().indexOf(q)>=0;})); };
   });
+}
+function listify(s){ return String(s).split('\n').filter(function(x){return x.trim();}).map(function(x){return '<li style="margin-bottom:6px">'+esc(x)+'</li>';}).join(''); }
+function renderResp(role){
+  var el=document.getElementById('resp'); if(!el)return;
+  var te=state.lang==='te';
+  var en=role.responsibilities_en||'', teTxt=role.responsibilities_te||'';
+  if(te){
+    if(teTxt){ el.innerHTML='<ul style="margin:0;padding-left:20px">'+listify(teTxt)+'</ul>'; }
+    else if(en){ el.innerHTML='<div class="pending" style="margin-bottom:8px">'+t('tel_soon')+'</div><ul style="margin:0;padding-left:20px">'+listify(en)+'</ul>'; }
+    else { el.innerHTML='<div class="pending">— awaiting content</div>'; }
+  } else {
+    el.innerHTML = en ? '<ul style="margin:0;padding-left:20px">'+listify(en)+'</ul>' : '<div class="pending">— awaiting content</div>';
+  }
 }
 function renderChecklist(items){
   var cl=document.getElementById('cl'); if(!cl)return;

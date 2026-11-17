@@ -16,8 +16,9 @@ function seedV11() {
   seedTrainingRotation_();
   seedSopRegister_();
   seedHelperCardTemplate_();
-  Logger.log('Seed v1.1 STRUCTURE done: training calendar + 24-SOP register + 15 helper-card slots.');
-  Logger.log('Still to load from the approved v1.1 master: SOP titles/bodies, role responsibilities, checklist wording, and all Telugu.');
+  seedStoreHelper_();   // approved Store Helper content (English; Telugu pending)
+  Logger.log('Seed v1.1 done: training calendar + 24-SOP register + Store Helper (English, live).');
+  Logger.log('Still to load from the approved v1.1 master: the other roles, SOP bodies, and all Telugu.');
 }
 
 /** TRN-001 training calendar — exactly as specified. Dec 2026 → Nov 2027. */
