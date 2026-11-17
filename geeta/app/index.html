@@ -102,8 +102,13 @@
   /* helper cards */
   .hcard{border:1px solid var(--border);border-radius:18px;background:var(--card);
     padding:16px;margin-bottom:14px;box-shadow:var(--shadow);}
-  .hcard .photo{height:150px;border-radius:14px;background:var(--card-2);border:1px dashed var(--border);
+  .hcard .photo{height:190px;border-radius:14px;overflow:hidden;background:var(--card-2);border:1px solid var(--border);
     display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;margin-bottom:12px;}
+  .hcard .photo.ph{border-style:dashed;}
+  .hcard .photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .hcard.playing{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold);}
+  .hcard.playing .speak{background:var(--gold);color:#0B1F4D;animation:pulse 1s infinite;}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
   .hcard .hrow{display:flex;align-items:center;gap:12px;}
   .hcard .num{width:44px;height:44px;border-radius:12px;background:var(--gold);color:#0B1F4D;
     display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;flex-shrink:0;}
@@ -157,7 +162,7 @@ var STR = {
     search:"Search my SOPs…", version:"Version", effective:"Effective", back:"Back",
     ack:"Read and understood", acked:"Thank you — recorded.", logout:"Sign out",
     tel_soon:"Telugu coming soon", nosops:"No SOPs loaded yet.", nocheck:"No checklist loaded yet.",
-    notrain:"No training loaded for this month yet.", helper_note:"Full picture + voice mode is the next step.",
+    notrain:"No training loaded for this month yet.", helper_note:"Picture + voice Helper Mode. The photos and Telugu words shown are SAMPLES until the real ones are added.",
     allroles:"View any role", wrong:"Wrong Employee ID or PIN.", loading:"Loading…" },
   te:{ sub:"సజీవ హ్యాండ్‌బుక్", signin:"లాగిన్", empid:"ఉద్యోగి ID", pin:"పిన్",
     preview:"ఎవరిగా చూడాలి…", myrole:"నా పాత్ర", resp:"బాధ్యతలు", measured:"కొలత",
@@ -165,7 +170,7 @@ var STR = {
     search:"నా SOPలలో వెతకండి…", version:"వర్షన్", effective:"అమల్లోకి", back:"వెనుకకు",
     ack:"చదివి అర్థమైంది", acked:"ధన్యవాదాలు — నమోదైంది.", logout:"లాగ్ అవుట్",
     tel_soon:"తెలుగు త్వరలో", nosops:"ఇంకా SOPలు లోడ్ కాలేదు.", nocheck:"ఇంకా చెక్‌లిస్ట్ లోడ్ కాలేదు.",
-    notrain:"ఈ నెలకు శిక్షణ ఇంకా లేదు.", helper_note:"పూర్తి ఫోటో + వాయిస్ మోడ్ తదుపరి దశ.",
+    notrain:"ఈ నెలకు శిక్షణ ఇంకా లేదు.", helper_note:"ఫోటో + వాయిస్ హెల్పర్ మోడ్. అసలైనవి జోడించే వరకు ఫోటోలు, తెలుగు పదాలు నమూనాలు మాత్రమే.",
     allroles:"ఏ పాత్ర అయినా చూడండి", wrong:"ఉద్యోగి ID లేదా పిన్ తప్పు.", loading:"లోడ్ అవుతోంది…" }
 };
 function t(k){ return (STR[state.lang] && STR[state.lang][k]) || STR.en[k] || k; }
@@ -184,11 +189,11 @@ function demoRoleData(id){
   var r = DEMO_ROLES[id];
   var helper = r.helper_mode === "Y";
   var checklist = helper ? [
-    {order:1,time_block:"Store opening",item_en:"[SAMPLE] Open shutter and main door",item_te:""},
-    {order:2,time_block:"Store opening",item_en:"[SAMPLE] Mark attendance on biometric",item_te:""},
-    {order:3,time_block:"Store opening",item_en:"[SAMPLE] Check drinking water",item_te:""},
-    {order:4,time_block:"Midday",item_en:"[SAMPLE] Help pack and dispatch orders",item_te:""},
-    {order:5,time_block:"Store closing",item_en:"[SAMPLE] Lock shutter (assigned person)",item_te:""}
+    {order:1,time_block:"Store opening",item_en:"[SAMPLE] Open shutter and main door",item_te:"షట్టర్ తెరవండి",image_url:demoPhoto('shutter'),audio_url:""},
+    {order:2,time_block:"Store opening",item_en:"[SAMPLE] Mark attendance",item_te:"హాజరు వేయండి",image_url:demoPhoto('attendance'),audio_url:""},
+    {order:3,time_block:"Store opening",item_en:"[SAMPLE] Check drinking water",item_te:"నీళ్లు చూడండి",image_url:demoPhoto('water'),audio_url:""},
+    {order:4,time_block:"Midday",item_en:"[SAMPLE] Pack and dispatch goods",item_te:"సామాన్లు ప్యాక్ చేయండి",image_url:demoPhoto('packing'),audio_url:""},
+    {order:5,time_block:"Store closing",item_en:"[SAMPLE] Lock shutter",item_te:"షట్టర్ మూయండి",image_url:demoPhoto('closing'),audio_url:""}
   ] : [
     {order:1,time_block:"Morning",item_en:"[SAMPLE] Review today's leads / tasks",item_te:""},
     {order:2,time_block:"Midday",item_en:"[SAMPLE] Follow up open quotations",item_te:""},
@@ -382,27 +387,73 @@ function renderSOP(code){
 }
 function closeSOP(){ state.view=null; render(); }
 
-/* --- helper mode (simple; full picture+voice = Stage D) --- */
+/* --- Helper Mode (Stage D): picture-first cards + Telugu voice ------------- */
 function renderHelperHome(){
   M.innerHTML='<div id="hh"></div>';
   var hh=document.getElementById('hh');
+  var hello = state.lang==='te' ? 'నేటి పని' : "Today's work";
   hh.innerHTML = (DEMO?'<div class="demo-banner">'+t('helper_note')+'</div>':'')+
-    '<div class="card"><h2>'+esc(state.session.person||'')+'</h2><div class="muted">'+esc(state.session.role_name)+'</div></div>'+
+    '<div class="card"><h2>'+esc(state.session.person||'')+'</h2>'+
+      '<div class="muted">'+esc(state.session.role_name)+'</div>'+
+      '<div class="clock" style="margin-top:8px;font-size:15px">📋 '+hello+'</div></div>'+
     '<div id="hcards"></div>'+
     '<button class="btn ghost" onclick="logout()">'+t('logout')+'</button>';
   api('getRole',{role_id:state.session.role_id,token:tok()}).then(function(d){
     var items=(d.ok&&d.data.checklist)||[];
     var el=document.getElementById('hcards');
     if(!items.length){ el.innerHTML='<div class="pending">'+t('nocheck')+'</div>'; return; }
-    el.innerHTML=items.map(function(it){
-      var cap = state.lang==='te' ? (it.item_te||('<span class="pending">'+t('tel_soon')+'</span>')) : esc(it.item_en);
-      return '<div class="hcard"><div class="clock">🕐 '+esc(it.time_block||'')+'</div>'+
-        '<div class="photo">📷 '+ (DEMO?'photo coming':'') +'</div>'+
-        '<div class="hrow"><div class="num">'+esc(it.order)+'</div>'+
-        '<div class="cap">'+cap+'</div>'+
-        '<button class="speak" title="Telugu voice" onclick="toast(\''+t('tel_soon')+'\')">🔊</button></div></div>';
-    }).join('');
+    el.innerHTML=items.map(helperCardHtml).join('');
   });
+}
+function helperCardHtml(it){
+  var te = state.lang==='te';
+  var cap = te ? (it.item_te ? esc(it.item_te) : '<span class="pending">'+t('tel_soon')+'</span>') : esc(it.item_en);
+  var photo = it.image_url
+    ? '<div class="photo"><img loading="lazy" alt="" src="'+esc(it.image_url)+'"></div>'
+    : '<div class="photo ph">📷 '+(te?'ఫోటో త్వరలో':'photo coming')+'</div>';
+  var hasAudio = !!it.audio_url;
+  var speakArgs = "'"+esc(it.audio_url||'')+"'";
+  return '<div class="hcard">'+
+    '<div class="clock">🕐 '+esc(it.time_block||'')+'</div>'+
+    photo+
+    '<div class="hrow"><div class="num">'+esc(it.order)+'</div>'+
+    '<div class="cap">'+cap+'</div>'+
+    '<button class="speak" aria-label="play voice" onclick="playVoice('+speakArgs+',this)">'+(hasAudio?'🔊':'🔈')+'</button>'+
+    '</div></div>';
+}
+
+/* Simple navy/gold placeholder image so the picture layout is visible in
+   preview. Replaced by the real store photo (image_url) once provided. */
+function demoPhoto(label){
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="400" height="260">'+
+    '<rect width="400" height="260" fill="#0B1F4D"/>'+
+    '<circle cx="200" cy="100" r="44" fill="none" stroke="#C9A227" stroke-width="6"/>'+
+    '<circle cx="200" cy="100" r="15" fill="#C9A227"/>'+
+    '<rect x="150" y="150" width="100" height="9" rx="4" fill="#C9A227"/>'+
+    '<text x="200" y="200" fill="#AEBEE0" font-family="sans-serif" font-size="17" text-anchor="middle">SAMPLE PHOTO</text>'+
+    '<text x="200" y="226" fill="#8094c0" font-family="sans-serif" font-size="14" text-anchor="middle">'+label+'</text>'+
+    '</svg>';
+  return 'data:image/svg+xml,'+encodeURIComponent(svg);
+}
+
+/* Play a task's Telugu voice note. Real audio when audio_url is set; otherwise
+   a short simulated "playing" so the button is demonstrable in preview. */
+var _audio=null;
+function playVoice(url, btn){
+  if(_audio){ try{_audio.pause();}catch(e){} _audio=null; }
+  var cards=document.querySelectorAll('.hcard.playing');
+  for(var i=0;i<cards.length;i++) cards[i].classList.remove('playing');
+  var card=btn.parentNode.parentNode; // .hrow -> .hcard
+  if(url){
+    _audio=new Audio(url);
+    card.classList.add('playing');
+    _audio.onended=function(){ card.classList.remove('playing'); };
+    _audio.play().catch(function(){ card.classList.remove('playing'); toast(t('tel_soon')); });
+  } else {
+    card.classList.add('playing');
+    toast(state.lang==='te' ? 'ఇక్కడ తెలుగు వాయిస్ వినిపిస్తుంది (రికార్డ్ అయ్యాక)' : 'Telugu voice note plays here once recorded');
+    setTimeout(function(){ card.classList.remove('playing'); }, 1500);
+  }
 }
 
 function tok(){ return (state.session&&state.session.token)||''; }
